@@ -6,17 +6,20 @@ async function getUsers(req, res) {
     const users = await User.find({});
     res.send({ data: users });
   } catch (err) {
-    res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
+    res.status(ERROR_CODE_500).send({ message: 'Внутренняя ошибка сервера' });
   }
 }
 
 async function getUser(req, res) {
   try {
-    const user = await User.findById(req.params.userId);
+    const user = await User.findById(req.params.userId)
+      .orFail(new Error('NotValidId'));
     res.send({ data: user });
   } catch (err) {
-    if (err.name === 'CastError') {
+    if (err.message === 'NotValidId') {
       res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
+    } if (err.name === 'CastError') {
+      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные' });
     } else {
       res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
     }
@@ -41,13 +44,14 @@ async function changeUserInfo(req, res) {
   const { name, about } = req.body;
   try {
     const user = await User.findByIdAndUpdate(req.user._id, { name, about },
-      { new: true, runValidators: true });
+      { new: true, runValidators: true })
+      .orFail(new Error('NotValidId'));
     res.send({ data: user });
   } catch (err) {
-    if (err.name === 'ValidationError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
-    } if (err.name === 'CastError') {
+    if (err.message === 'NotValidId') {
       res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
+    } if (err.name === 'CastError') {
+      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
     } else {
       res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
     }
@@ -58,13 +62,14 @@ async function changeUserAvatar(req, res) {
   try {
     const { avatar } = req.body;
     const userAvatar = await User.findByIdAndUpdate(req.user._id, { avatar },
-      { new: true, runValidators: true });
+      { new: true, runValidators: true })
+      .orFail(new Error('NotValidId'));
     res.send({ data: userAvatar });
   } catch (err) {
-    if (err.name === 'ValidationError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
-    } if (err.name === 'CastError') {
+    if (err.message === 'NotValidId') {
       res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
+    } if (err.name === 'CastError') {
+      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
     } else {
       res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
     }
