@@ -1,85 +1,103 @@
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/user');
-const { ERROR_CODE_400, ERROR_CODE_500, ERROR_CODE_404 } = require('../errors/errorCodes');
+const ValidationError = require('../errors/ValidationError');
+const CastError = require('../errors/CastError');
+const MongoServerError = require('../errors/MongoServerError');
+const NotValidId = require('../errors/NotValidId');
 
-async function getUsers(req, res) {
-  try {
-    const users = await User.find({});
-    res.send({ data: users });
-  } catch (err) {
-    res.status(ERROR_CODE_500).send({ message: 'Внутренняя ошибка сервера' });
-  }
-}
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(email, password).then((user) => {
+    res.send({
+      token: jwt.sign({ _id: user._id },
+        'super-strong-secret',
+        { expiresIn: '7d' }),
+    });
+  }).catch(next);
+};
 
-async function getUser(req, res) {
-  try {
-    const user = await User.findById(req.params.userId)
-      .orFail(new Error('NotValidId'));
+const getUsers = (req, res, next) => {
+  User.find({}).then((user) => {
     res.send({ data: user });
-  } catch (err) {
-    if (err.message === 'NotValidId') {
-      res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
-    } if (err.name === 'CastError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные' });
-    } else {
-      res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
-    }
-  }
-}
+  }).catch(next);
+};
 
-async function createUser(req, res) {
-  try {
-    const { name, about, avatar } = req.body;
-    const user = await User.create({ name, about, avatar });
-    res.send({ data: user });
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
-    } else {
-      res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
-    }
-  }
-}
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-async function changeUserInfo(req, res) {
+  bcrypt.hash(password, 10).then((hash) => User.create({
+    name, about, avatar, email, password: hash,
+  }))
+    .then((user) => res.status(201).send({
+      data: {
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      },
+    }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        throw new ValidationError('Переданы некорректные данные при создании пользователя');
+      }
+      if (err.name === 'MongoServerError' && err.code === 11000) {
+        throw new MongoServerError('При регистрации указан email, который уже существует на сервере');
+      }
+      next(err);
+    })
+    .catch(next);
+};
+
+const changeUserInfo = (req, res, next) => {
   const { name, about } = req.body;
-  try {
-    const user = await User.findByIdAndUpdate(req.user._id, { name, about },
-      { new: true, runValidators: true })
-      .orFail(new Error('NotValidId'));
-    res.send({ data: user });
-  } catch (err) {
-    if (err.message === 'NotValidId') {
-      res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
-    } if (err.name === 'CastError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
-    } else {
-      res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
-    }
-  }
-}
+  User.findByIdAndUpdate(req.user._id, { name, about },
+    { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        throw new NotValidId('Нет пользователя с таким id');
+      }
+      res.send({ data: user });
+    }).catch((err) => {
+      if (err.name === 'CastError') {
+        throw new CastError('Переданы некорректные данные при создании пользователя');
+      }
+      if (err.name === 'ValidationError') {
+        throw new ValidationError('Переданы некорректные данные');
+      }
+      next(err);
+    })
+    .catch(next);
+};
 
-async function changeUserAvatar(req, res) {
-  try {
-    const { avatar } = req.body;
-    const userAvatar = await User.findByIdAndUpdate(req.user._id, { avatar },
-      { new: true, runValidators: true })
-      .orFail(new Error('NotValidId'));
-    res.send({ data: userAvatar });
-  } catch (err) {
-    if (err.message === 'NotValidId') {
-      res.status(ERROR_CODE_404).send({ message: 'Пользователь по указанному _id не найден' });
-    } if (err.name === 'CastError') {
-      res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные при создании пользователя' });
-    } else {
-      res.status(ERROR_CODE_500).send({ message: 'внутренняя ошибка сервера' });
-    }
-  }
-}
+const changeUserAvatar = (req, res, next) => {
+  const { avatar } = req.body;
+  User.findByIdAndUpdate(req.user._id, { avatar },
+    { new: true, runValidators: true })
+    .then((userAvatar) => {
+      if (!userAvatar) {
+        throw new NotValidId('Нет пользователя с таким id');
+      }
+      res.send({ data: userAvatar });
+    }).catch((err) => {
+      if (err.name === 'CastError') {
+        throw new CastError('Переданы некорректные данные при создании пользователя');
+      }
+      if (err.name === 'ValidationError') {
+        throw new ValidationError('Переданы некорректные данные');
+      }
+      next(err);
+    })
+    .catch(next);
+};
 
 module.exports = {
   changeUserInfo,
   changeUserAvatar,
   createUser,
-  getUser,
   getUsers,
+  login,
+
 };

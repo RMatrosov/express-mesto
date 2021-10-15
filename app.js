@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const { errors } = require('celebrate');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 
@@ -11,23 +13,30 @@ app.use(bodyParser.json());
 app.use(helmet());
 app.disable('x-powered-by');
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '614b83e9dc70e5f0c978d90',
-  };
-
-  next();
-});
-
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
 app.use(helmet());
 app.use('/', require('./routes/users'));
+
 app.use('/', require('./routes/cards'));
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Запрашиваемый ресурс не найден' });
+app.use('*', () => {
+  throw new NotFoundError('Запрашиваемый ресурс не найден');
 });
+
+app.use(errors());
+
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+});
+
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });
