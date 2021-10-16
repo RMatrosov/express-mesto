@@ -17,10 +17,46 @@ const login = (req, res, next) => {
   }).catch(next);
 };
 
+const getUserMe = (req, res, next) => {
+  const currentUserId = req.user._id;
+  User.findOne({ _id: currentUserId }).then((user) => {
+    if (!user) {
+      throw new NotValidId('Пользователь по указанному _id не найден');
+    }
+    res.send({ data: user });
+  }).catch((err) => {
+    if (err.name === 'CastError') {
+      throw new CastError('Переданы некорректные данные при создании пользователя');
+    }
+    if (err.name === 'ValidationError') {
+      throw new ValidationError('Переданы некорректные данные');
+    }
+    next(err);
+  });
+};
+
 const getUsers = (req, res, next) => {
   User.find({}).then((user) => {
     res.send({ data: user });
   }).catch(next);
+};
+
+const getUser = (req, res, next) => {
+  User.findById(req.params.userId).then((user) => {
+    if (!user) {
+      throw new NotValidId('Пользователь по указанному _id не найден');
+    }
+    res.send({ data: user });
+  }).catch((err) => {
+    if (err.name === 'CastError') {
+      throw new CastError('Переданы некорректные данные при создании пользователя');
+    }
+    if (err.name === 'ValidationError') {
+      throw new ValidationError('Переданы некорректные данные');
+    }
+    next(err);
+  })
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
@@ -99,5 +135,6 @@ module.exports = {
   createUser,
   getUsers,
   login,
-
+  getUser,
+  getUserMe,
 };
