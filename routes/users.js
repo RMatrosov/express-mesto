@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
+const validator = require('validator');
 const auth = require('../middlewares/auth');
 const {
   getUsers, createUser, changeUserInfo, changeUserAvatar, login,
@@ -9,14 +10,14 @@ router.get('/users/me', auth, getUsers);
 
 router.post('/signup', celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().required().email(),
     password: Joi.string().min(8),
   }),
 }), createUser);
 
 router.post('/signin', celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().required().email(),
     password: Joi.string().min(8),
   }),
 }), login);
@@ -30,7 +31,12 @@ router.patch('/users/me', celebrate({
 
 router.patch('/users/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required(),
+    avatar: Joi.string().required().custom(((value, helpers) => {
+      if (validator.isURL(value, { require_protocol: true })) {
+        return value;
+      }
+      return helpers.message('передайте ссылку');
+    })),
   }),
 }), auth, changeUserAvatar);
 

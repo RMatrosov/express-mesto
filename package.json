@@ -13,7 +13,7 @@
     "url": "git+https://github.com/RMatrosov/express-mesto.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Roman Matrosov",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/RMatrosov/express-mesto/issues"

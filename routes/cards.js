@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const validator = require('validator');
 const { celebrate, Joi } = require('celebrate');
 const auth = require('../middlewares/auth');
 const {
@@ -16,7 +17,12 @@ router.delete('/cards/:cardId', celebrate({
 router.post('/cards', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).required(),
-    link: Joi.string().required(),
+    link: Joi.string().required().custom(((value, helpers) => {
+      if (validator.isURL(value, { require_protocol: true })) {
+        return value;
+      }
+      return helpers.message('передайте ссылку');
+    })),
   }),
 }), auth, createCard);
 
