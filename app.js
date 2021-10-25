@@ -17,6 +17,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 app.use(helmet());
+
 app.disable('x-powered-by');
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
