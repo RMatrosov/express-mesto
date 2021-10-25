@@ -28,6 +28,7 @@ app.use('/', require('./routes/cards'));
 app.use('*', () => {
   throw new NotFoundError('Запрашиваемый ресурс не найден');
 });
+
 app.use(errorLogger);
 
 app.use(errors());
