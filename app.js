@@ -13,21 +13,25 @@ const { PORT = 3000 } = process.env;
 
 const app = express();
 
-const options = {
-  origin: [
-    'https://api.matrosov.mesto.nomoredomains.rocks',
-    'http://localhost:3000',
-    'https://localhost:3000',
-    'https://matrosov.mesto.nomoredomains.rocks',
-  ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
+const CORS_WHITELIST = [
+  'https://api.matrosov.mesto.nomoredomains.rocks',
+  'http://localhost:3000',
+  'https://localhost:3000',
+  'https://matrosov.mesto.nomoredomains.rocks',
+];
+
+const corsOption = {
   credentials: true,
+  origin: function checkCorsList(origin, callback) {
+    if (CORS_WHITELIST.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
 };
 
-app.use('*', cors(options));
+app.use(cors(corsOption));
 
 app.use(bodyParser.urlencoded({
   extended: true,
