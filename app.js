@@ -13,7 +13,21 @@ const { PORT = 3000 } = process.env;
 
 const app = express();
 
-app.use(cors);
+const options = {
+  origin: [
+    'https://api.matrosov.mesto.nomoredomains.rocks',
+    'http://localhost:3000',
+    'https://localhost:3000',
+    'https://matrosov.mesto.nomoredomains.rocks',
+  ],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
+  credentials: true,
+};
+
+app.use('*', cors(options));
 
 app.use(bodyParser.urlencoded({
   extended: true,
