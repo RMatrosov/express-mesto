@@ -6,12 +6,14 @@ const CastError = require('../errors/CastError');
 const MongoServerError = require('../errors/MongoServerError');
 const NotValidId = require('../errors/NotValidId');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
+
 const login = (req, res, next) => {
   const { email, password } = req.body;
   User.findUserByCredentials(email, password).then((user) => {
     res.send({
       token: jwt.sign({ _id: user._id },
-        'super-strong-secret',
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
         { expiresIn: '7d' }),
     });
   }).catch(next);

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -26,7 +27,14 @@ app.disable('x-powered-by');
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
 app.use(helmet());
+
 app.use(requestLogger);
+
+app.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('Сервер сейчас упадёт');
+  }, 0);
+});
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/cards'));
 
