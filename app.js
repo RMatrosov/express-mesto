@@ -15,9 +15,10 @@ const app = express();
 
 const CORS_WHITELIST = [
   'https://api.matrosov.mesto.nomoredomains.rocks',
-  'http://localhost:3000',
-  'https://localhost:3000',
+  'http://localhost:3001',
+  'https://localhost:3001',
   'https://matrosov.mesto.nomoredomains.rocks',
+  'http://matrosov.mesto.nomoredomains.rocks',
 ];
 
 const corsOption = {
