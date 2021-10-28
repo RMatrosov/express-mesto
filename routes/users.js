@@ -6,6 +6,7 @@ const {
   getUsers, createUser, changeUserInfo, changeUserAvatar, login, getUser, getUserMe,
 } = require('../controllers/users');
 
+
 router.get('/users/me', auth, getUserMe);
 
 router.get('/users', auth, getUsers);
