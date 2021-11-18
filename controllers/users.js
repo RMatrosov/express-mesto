@@ -18,6 +18,7 @@ const login = (req, res, next) => {
     res.send({ token });
   }).catch(next);
 };
+
 const getUserMe = (req, res, next) => {
   const currentUserId = req.user._id;
   User.findOne({ _id: currentUserId }).then((user) => {
